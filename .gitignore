@@ -2,3 +2,4 @@ game.*
 **/*.bin
 rgbds/
 notes/
+package-lock.json

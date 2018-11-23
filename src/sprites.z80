@@ -40,8 +40,8 @@ TestFunction:
 	RegisterPair TMP1, b, c
 	RegisterPair TMP2, d, e
 	RegisterPair TMP3, h, l
-	InvalidatePair TMP1
-	InvalidatePair TMP2
+	InvalidatePair TMP1, b, c
+	InvalidatePair TMP2, d, e
 	RegisterPair TMP1, d, e
 	MovePair TMP3, b, c
 ret

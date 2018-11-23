@@ -39,32 +39,24 @@ ret
 
 ; Macro for moving to a specific element
 ; No register use guarantee! (maybe except for A?)
-; in a structure starting from a previous one
-; \1 = Source address
-; \2 = Dest address
-; \3 = High register to increment
-; \4 = Low register to increment
 ; TODO: Optimize for large distances
-SeekStruct: MACRO
-offset = \2 - \1
-    
-IF offset > 0
-    .rept offset
-        inc \3\4
-    endr
-ELIF offset < 0
-    .rept offset
-        dec \3\4
-    endr
-ENDC
-ENDM
+JMACRO SeekSruct(src, dst, hi, lo)
+    let offset = dst - src;
+    let retstr = "";
+    let op = (offset > 0) ? "inc " : "dec ";
+
+    while(offset != 0){
+        retstr += op + hi + lo + "\n";
+    }
+
+    return retstr;
+ENDJMACRO
 
 ; Same as SeekStruct, except \1 is a SETable
-SeekStructAndSet: MACRO
-offset = \2 - \1
-\1 = \1 + offset
-    SeekStruct \1, \2, \3, \4
-ENDM
+JMACRO SeekStructAndSet(src, dst, hi, lo)
+    src += (dst - src);
+    SeekStruct(src, dst, hi, lo);
+ENDJMACRO
 
 ; TODO: SeekStructAtHLWithLD(AndSet) 
 ; which is a terrible name for a macro that increments/
@@ -73,16 +65,27 @@ ENDM
 ;;; REGISTER/MEMORY LABEL DEFINITON HELPERS ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-InitRegistry: MACRO
-REGISTRY_IN_USE = 1
-a_SET = 0
-b_SET = 0
-c_SET = 0
-d_SET = 0
-e_SET = 0
-h_SET = 0
-l_SET = 0
-ENDM
+JMACRO InitRegistry()
+    storage.REGISTRY_IN_USE = true;
+    storage.a_SET = false;
+    storage.b_SET = false;
+    storage.c_SET = false;
+    storage.d_SET = false;
+    storage.e_SET = false;
+    storage.h_SET = false;
+    storage.l_SET = false;
+ENDJMACRO
+
+JMACRO DestroyRegistry()
+    delete storage.REGISTRY_IN_USE;
+    delete storage.a_SET;
+    delete storage.b_SET;
+    delete storage.c_SET;
+    delete storage.d_SET;
+    delete storage.e_SET;
+    delete storage.h_SET;
+    delete storage.l_SET;
+ENDJMACRO
 
 ; Defines names for a pair of registers
 ; \1 = Prefix name, all caps
@@ -90,82 +93,101 @@ ENDM
 ; \3 = second register in pair
 ; Defines names \1_HI, \1_LO, \1_REG, \1_REF
 ; Checks against variables \2_SET, \3_SET
-RegisterPair: MACRO
-PRINTT "\1: \2\3\n"
+JMACRO RegisterPair(prefix, hi, lo)
+    if(!storage["REGISTRY_IN_USE"]) {
+        console.error("Use of registry function without init.")
+        debugger;
+        return;
+    }
 
-IF \2_SET == 1
-FAIL "\2 is already set!"
-ENDC
+    if (storage[hi+"_SET"]) {
+        console.error(hi + "is already set!");
+        debugger;
+        return;
+    }
 
-IF \3_SET == 1
-FAIL "\3 is already set!"
-ENDC
+    if (storage[lo+"_SET"]) {
+        console.error(lo + "is already set!");
+        debugger;
+        return;
+    }
 
-\2_SET = 1
-\3_SET = 1
+    console.log(prefix + ": " + lo + hi);
 
-\1_HI EQUS "\2"
-\1_LO EQUS "\3"
-\1_REG EQUS "\2\3"
-\1_REF EQUS "[\2\3]"
-ENDM
+    storage[hi+"_SET"] = true;
+    storage[lo+"_SET"] = true;
+
+    storage[prefix] = new Object();
+    storage[prefix]["hi"] = hi;
+    storage[prefix]["lo"] = lo;
+    storage[prefix]["reg"] = hi + lo;
+    storage[prefix]["ref"] = "[" + hi + lo + "]";
+ENDJMACRO
 
 ; Marks a macro pair as invalid
 ; \1 = Prefix name, all caps
-InvalidatePair: MACRO
-PRINTT "\1: INVALID\n"
+JMACRO InvalidatePair(prefix)
+    let hi = storage[prefix]["hi"];
+    let lo = storage[prefix]["lo"];
 
-\1_HI_SET = 0
-PURGE \1_HI
-;\1_HI EQUS "INVALID"
-\1_LO_SET = 0
-PURGE \1_LO
-PURGE \1_REG
-PURGE \1_REF
-;\1_LO EQUS "INVALID"
-;\1_REG EQUS "INVALID"
-;\1_REF EQUS "INVALID"
-ENDM
+    delete storage.prefix;
+    storage[hi+"_SET"] = false;
+    storage[lo+"_SET"] = false;
+ENDJMACRO
 
 ; Moves a pair to another set of registers, with contents
 ; \1 = old pair name
-; \2 = new pair lo
-; \3 = new pair hi
-MovePair: MACRO
-PRINTT "\1 -> \2\3\n"
-IF \2_SET == 1
-FAIL "\2 is already set!"
-ENDC
+; \2 = new pair hi
+; \3 = new pair lo
+JMACRO MovePair(prefix, hi, lo)
+    console.log(prefix + " -> " + hi + lo);
+    if (storage[hi+"_SET"]){
+        console.error(hi + " is already set!");
+        debugger;
+        return;
+    }
+    if (storage[lo+"_SET"]){
+        console.error(hi + " is already set!");
+        debugger;
+        return;
+    }
 
-IF \3_SET == 1
-FAIL "\3 is already set!"
-ENDC
+    let retstr = "";
+    retstr += "ld " + hi + ", " + storage.prefix.hi + "\n";
+    retstr += "ld " + lo + ", " + storage.prefix.lo + "\n";
+    InvalidatePair(@prefix);
+    RegisterPair(@prefix, @hi, @lo);
+    return retstr;
 
-    ld \2, \1_HI
-    ld \3, \1_LO
-    InvalidatePair \1
-    RegisterPair \1, \2, \3
-
-ENDM
+ENDJMACRO
 
 ; Registers a single register
 ; \1 = label name
 ; \2 = register
-RegisterSingle: MACRO
-IF \2_SET == 1
-FAIL "\2 is already set!"
-ENDC
+JMACRO RegisterSingle(prefix, reg)
+    if(!storage["REGISTRY_IN_USE"]) {
+        console.error("Use of registry function without init.")
+        debugger;
+        return;
+    }
 
-\2_SET = 1
+    if(storage[reg + "_SET"]){
+        console.error(reg + " is already set!");
+        debugger;
+        return;
+    }
 
-\1 EQUS "\2"
-\1_SET EQUS "\2_SET"
-ENDM
+    storage[reg + "_SET"] = 1;
+
+    storage[prefix] = new Object();
+    storage[prefix]["reg"] = reg;
+    storage[prefix]["ref"] = "[" + reg + "]";
+ENDJMACRO
 
 ; Unregisters a single register
 ; \1 = label name
-InvalidateSingle: MACRO
-\1_SET = 0
-;PURGE \1
-\1 EQUS "INVALID"
-ENDM
+JMACRO InvalidateSingle(prefix)
+    let reg = storage[prefix]["reg"];
+    storage[reg + "_SET"] = false;
+    delete storage[prefix];
+ENDJMACRO

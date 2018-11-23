@@ -70,9 +70,9 @@ SpriteDMA_HiRAM:
 	DS 10
 JoypadButtons: ; First nybble (left to right) is direction, second is buttons
 	DS 1
-ActiveObjectsBitfield ; Bit 7 = Object 1, Bit 0 = Object 8
+ActiveObjectsBitfield: ; Bit 7 = Object 1, Bit 0 = Object 8
 	DS 1
-ActiveObjectsCount
+ActiveObjectsCount:
 	DS 1
 TurnInfo:
 	; Bit 7: Team selected by player. 0 = gecko, 1 = snowfox
