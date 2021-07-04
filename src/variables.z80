@@ -22,22 +22,6 @@ FieldHeight EQU $60
 SECTION "Variables",WRAM0[$C000]
 WramStart:
 
-; Scanline cmd/arg buffer for parallax scrolling
-ParallaxLCDC_Cmd1:
-	DS 2
-ParallaxLayer1: ; Grass -> dirt
-	DS 1
-ParallaxLCDC_Cmd2:
-	DS 2
-ParallaxLayer2: ; Dirt -> grass
-	DS 1
-ParallaxLCDC_Cmd3:
-	DS 2
-ParallaxLayer3: ; Grass -> bottom
-	DS 1
-ParallaxLCDC_CmdReset:
-	DS 3
-
 ;SECTION "ObjectTable",WRAM0[$C100]
 ; Define (6 or 8?) objects
 charArray:

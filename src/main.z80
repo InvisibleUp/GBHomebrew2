@@ -14,7 +14,6 @@ include "src/math.z80"       ; Math macros & routines
 ; Game stuff
 include "src/gfxinclude.z80" ; Graphics data
 include "src/sprites.z80"    ; Sprite routines
-include "src/background.z80" ; Background routines
 include "src/objects.z80"    ; Object/AI routines
 
 SECTION "main", ROM0
@@ -141,34 +140,6 @@ Game_LoadGFX:
 
 ret
 
-DefaultParallaxLCDC:
-    DB LCDC_CMD_SCROLL_ABS, 35, 0                    ; Grass -> dirt
-    DB LCDC_CMD_SCROLL_ABS, 73, 0                    ; Dirt -> grass
-    DB LCDC_CMD_SCROLL_ABS, 114, 0                   ; Grass -> bottom
-    DB LCDC_CMD_SEEK, 115, LOW(ParallaxLCDC_Cmd1)    ; Reset
-
-Game_InitParallax:
-    ; Clear parallax buffer
-    ld de, ParallaxLCDC_Cmd1
-    ld hl, DefaultParallaxLCDC
-    ld bc, (Game_InitParallax - DefaultParallaxLCDC)
-    call memcpy
-
-    ; Init first arg
-	ld a, LCDC_CMD_SCROLL_ABS
-	ldh [NextScanlineAction], a
-	ld a, 35
-	ldh [rLYC], a
-	xor a
-	ldh [NextScanlineArg], a
-
-    ld a, HIGH(ParallaxLCDC_Cmd1)
-    ldh [ScanlineEffectsPointer], a
-    ld a, LOW(ParallaxLCDC_Cmd1)
-    ldh [ScanlineEffectsPointer+1], a
-
-    ret
-
 ; Inviz splash screen loop
 InvizLoop:
     call Inviz_LoadGFX
@@ -193,16 +164,6 @@ GameLoop:
     ld bc, _get(`charStruct', `sizeof')
     call memcpy
 
-    ; Testing stuff
-    ld a, $C0
-    ld [TurnInfo], a
-
-    call Game_InitParallax
-
-    ; Turn on parallax stuff now that it's safe-ish
-    ld a, STATF_LYC
-    ldh [rSTAT], a 
-
     call EnableLCD
     ei
 
@@ -219,22 +180,6 @@ GameLoop:
     call TickAllObjects
 
     ; Prepare graphics data
-
-    ; TEST: Scroll with player
-    ;ld hl, charArray + _get(`charStruct', `dx')
-    ;ld c, [hl]
-
-    ; TEST: Scroll at 2.5 pixels/sec
-    ldh a, [GlobalTimer]
-    rra
-    ld a, 1
-    adc a, a
-    ld c, a
-
-    ; TEST: Scroll at one pixel/sec
-    ;ld c, 1
-
-    call updateFieldX
     call PrepareAllObjects
 
     ; Tick global timer
@@ -258,7 +203,6 @@ GameLoop:
 ; Main Loop
 main:
     ; Set stack to top of WRAM
-    ; (yes, this odd address kills me inside)
     ld sp, $DFFF
 
     ; Set interrupts and timers
