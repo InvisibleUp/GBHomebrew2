@@ -235,6 +235,12 @@ ret
 ; de = output sprite location
 ; hl = input object location
 PrepareAllObjects:
+	; clear OAM
+	ld hl, SpriteTable
+	ld bc, $9F
+	ld a, 0
+	call memset
+
 	ld d, HIGH(SpriteTable)
 	ld e, LOW(SpriteTable)
 	ld hl, charArray
@@ -256,6 +262,52 @@ PrepareAllObjects:
 .checkdone
 	ret z
 	jr .loop
+
+; Set animation metadata
+; Requires HL = obj[anim]
+; b = animation index
+; 'a' shall be clobbered
+SetAnim:
+	; 
+	push de
+	push hl
+	push hl
+
+	; load appropriate animation speed
+	; entries are 3 bytes long
+	ld hl, animations_speeds_start
+	ld d, 0
+	ld e, b
+	add hl, de
+
+	; de = animations_speed, hl = obj data
+	ld d, h
+	ld e, l
+	pop hl
+
+	; animation
+	; first, check what we already have
+	ld a, [hl]
+	cp a, b
+	jp z, .return
+
+	; then set it
+	ld a, b
+	ld [hl+], a
+	; frame
+	ld a, 0
+	ld [hl+], a
+	; speed
+	ld a, [de]
+	ld [hl+], a
+	; timer
+	ld a, 0
+	ld [hl], a
+.return
+	pop hl
+	pop de
+	ret
+
 
 ; Don't call directly!
 SpriteDMA:

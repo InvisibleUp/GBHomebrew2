@@ -1,23 +1,7 @@
 SECTION "OBJECTS",ROM0
 
-; Physics acceleration tables and stuff
-AccelTable_Size EQU 7
-AccelTable_Right:
-	DB $00, $10
-	DB $00, $20
-	DB $00, $40
-	DB $00, $80
-	DB $01, $00
-	DB $02, $00
-	DB $04, $00
-AccelTable_Left:
-	DB $FF, $F0
-	DB $FF, $E0
-	DB $FF, $C0
-	DB $FF, $80
-	DB $FF, $00
-	DB $FE, $00
-	DB $FC, $00
+ACCEL_X_LO EQU $20
+MAX_X_HI EQU $01
 
 ; Create bitfield in a containing a list of active objects.
 ; This is clever because you can rr x; jr nc to skip easily.
@@ -79,8 +63,8 @@ TickObject_Animation:
 	; HL = Animation frame *= 2
 	RegisterPair(ANIMOFF, h, l)
 	rla
-	ld ANIMOFF_lo, 0
-	ld ANIMOFF_hi, a
+	ld ANIMOFF_hi, 0
+	ld ANIMOFF_lo, a
 	; Animation pointer (=HL) to relevant animation
 	add ANIMOFF_reg, ANIMBASE_reg
 	InvalidatePair(ANIMBASE)
@@ -262,107 +246,131 @@ TickObject_PlayerInput:
 ;	- Player is not moving but is pressing a button
 ;	- Player is trying to go same as DX
 
+	RegisterPair(`dX', d, e)
+	ld dX_lo, CHAR_ref
+	inc CHAR_reg
+	ld dX_hi, CHAR_ref
+
 	; Are we pressing any buttons?
-	RegisterSingle(`JPDirBtns', b)
+	RegisterSingle(`STATE', b)
+	ld STATE_reg, 0
 	ldh a, [JoypadButtons]
 	and a, PADF_RIGHT | PADF_LEFT
-	jr z, .return ; No direction is pressed
-	ld JPDirBtns_reg, a
+	jr z, .run_none ; No direction is pressed
 
-	RegisterPair(`dX', d, e)
-	ld dX_hi, CHAR_ref
-	inc CHAR_reg
-	ld dX_lo, CHAR_ref
-	dec CHAR_reg
+	; Did we switch from hard left to hard right?
+	ldh a, [JoypadButtons]
+	and a, PADF_RIGHT | PADF_LEFT
 
-	RegisterSingle(`AccelLoop', c)
-	ld AccelLoop_reg, AccelTable_Size
-	push CHAR_reg
-	InvalidatePair(`CHAR')
-
-	MovePair(`dX', h, l)
-	RegisterPair(`ACCEL', d, e)
-	ld ACCEL_reg, AccelTable_Right
-	bit PADB_LEFT, JPDirBtns_reg
-	jp z, .skipAccelLeft
-	ld ACCEL_reg, AccelTable_Left
-.skipAccelLeft:
-
-.accelLoop:
-	push dX_reg
-	push bc
-
-	; Test if new speed is higher than old speed
-	ld a, ACCEL_ref
 	ld b, a
-	inc ACCEL_reg
-	ld a, ACCEL_ref
-	ld c, a
-	inc ACCEL_reg
+	ldh a, [LastButtons]
+	and a, PADF_RIGHT | PADF_LEFT
 
-	NegateHL
-	add dX_reg, bc
-	jp c, .accelLoop_continue
+	xor a, b
+	cp a, PADF_RIGHT | PADF_LEFT
+	jp z, .run_none ; yep!
 
-	; This acceleration is higher, so it's the new one
-	ld dX_hi, b
-	ld dX_lo, c
-	pop bc
-	add sp, 2
-	ld c, 1
-	jp .accelLoop_end
+.run_left_start:
+	; pressing left?
+	ldh a, [JoypadButtons]
+	and a, PADF_RIGHT
 
-.accelLoop_continue
-	pop bc
-	pop dX_reg
-.accelLoop_end
-	dec AccelLoop_reg
-	jp nz, .accelLoop
+	; set state
+	ld STATE_reg, 1
+	jp nz, .run_right
+	ld STATE_reg, 2
 
-	InvalidatePair(`ACCEL')
-	MovePair(`dX', d, e)
-	RegisterPair(`CHAR', h, l)
-	pop CHAR_reg
-	ld CHAR_ref, dX_lo
-	inc CHAR_reg
+	; negate de
+	xor a
+	sub e
+	ld e,a
+	ld a,0
+	sbc d
+	ld d,a
+
+.run_right:
+	ld a, d
+	cp a, MAX_X_HI
+	jp nc, .run_left
+
+	ld a, e
+	add a, ACCEL_X_LO
+	ld e, a
+	jp nc, .run_left
+
+	inc d
+	jp .run_left
+
+.run_left
+	; pressing left?
+	ldh a, [JoypadButtons]
+	and a, PADF_RIGHT
+	jp nz, .run_done
+
+	; negate de
+	xor a
+	sub e
+	ld e,a
+	ld a,0
+	sbc d
+	ld d,a
+
+	jp .run_done
+
+.run_none
+	ld de, 0
+
+.run_done
+	; load de into [hl]
 	ld CHAR_ref, dX_hi
 	dec CHAR_reg
+	ld CHAR_ref, dX_lo
 
-	InvalidateSingle(`JPDirBtns')
+	InvalidatePair('dX')
+
+.run_setanim
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `anim'), CHAR_hi, CHAR_lo)
+	ld a, STATE_reg
+	push bc
+	cp a, 0
+	jp z, .run_setanim_stop
+
+	ld b, ANIM_RUN
+	call SetAnim
+	pop bc
+	jp .run_setdir
+
+.run_setanim_stop
+	ld b, ANIM_IDLE
+	call SetAnim
+	pop bc
+
+.run_setdir
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `info'), CHAR_hi, CHAR_lo)
+	ld a, STATE_reg
+	cp a, 0
+	jp z, .return
+
+	; left?
+	cp a, 1
+	jp z, .run_setdir_left
+
+.run_setdir_right
+	ld a, [hl]
+	or a, %01000000
+	ld [hl], a
+	jp .return
+
+.run_setdir_left:
+	ld a, [hl]
+	and a, %10111111
+	ld [hl], a
+
 .return
 	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `start'), CHAR_hi, CHAR_lo)
 	InvalidatePair(`CHAR')
+	InvalidateSingle(`STATE')
 	ret
-
-TickObject_AI_Offense:
-	ret
-TickObject_AI_Defense:
-	ret
-
-; HL @ attributes
-TickObject_Offense:
-; Our team?
-	ld b, [hl] ; B = attributes
-	ld a, [TurnInfo] ; Bit 7 = team #
-
-	; Check if bit 6 of B = bit 7 of A
-	rl b
-	and a, b ; Bit 7 is 1 if player team = object team
-	rla ; Carry flag has our answer. 
-	; B = attributes, shifted left 1
-	; A is garbage
-	jr nc, .enemyTeam
-	; Jump to player input routine
-	jp TickObject_PlayerInput
-.enemyTeam
-; Our turn?
-	; Check if (now) bit 7 of B = bit 7 of A
-	ld a, [TurnInfo]
-	rla
-	and a, b
-	rla ; Carry flag is 1 if offense team = object team
-	jp c, TickObject_AI_Offense ; Do offense stuff
-	jp TickObject_AI_Defense ; Try and stop player's offense
 
 ; HL = object offset
 TickObject:
@@ -370,15 +378,11 @@ TickObject:
 	ld a, [hl]
 	rla
 	ret nc ; Return if not active
-	; Otherwise "call" the proper dispatch function
-	; Push the return address so that ret still works, but we
-	; don't have to fiddle with jumps after the call
-	ld bc, .PlayerActionDone
-	push bc
-	; todo: put a jump table here
-	jp TickObject_Offense
 
-.PlayerActionDone:
+	; todo: put a jump table here depending on object type
+	call TickObject_PlayerInput
+
+.ObjActionDone:
 	; Do physics stuff
 	call TickObject_Physics
 	; Do animaton stuff

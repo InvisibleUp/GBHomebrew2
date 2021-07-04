@@ -29,8 +29,8 @@ mappings_player_run1_left:
     DB 0, 0, 12, map_left | map_light
 mappings_player_run1_right:
     DB 2 ; length
-    DB 0, 8, 12, map_right | map_light
-    DB 0, 0, 10, map_right | map_light
+    DB 0, 0, 12, map_right | map_light
+    DB 0, -8, 10, map_right | map_light
 
 mappings_player_run2_left:
     DB 2 ; length
@@ -38,8 +38,8 @@ mappings_player_run2_left:
     DB 0, 0, 16, map_left | map_light
 mappings_player_run2_right:
     DB 2 ; length
-    DB 0, 8, 16, map_right | map_light
-    DB 0, 0, 14, map_right | map_light
+    DB 0, 0, 16, map_right | map_light
+    DB 0, -8, 14, map_right | map_light
 
 mappings_end:
 
@@ -63,14 +63,22 @@ animations_player_run:
     ; Left
     DW mappings_player_run1_left, mappings_player_run2_left
     ; Right
-    DW mappings_player_run2_right, mappings_player_run2_right
+    DW mappings_player_run1_right, mappings_player_run2_right
 
 animations_end:
+
+ANIM_IDLE EQU 0
+ANIM_RUN  EQU 1
 
 animations_pointers_start:
     DW animations_player_idle
     DW animations_player_run
 animations_pointers_end:
+
+animations_speeds_start:
+    DB 1 ; idle
+    DB 3 ; run
+animations_speeds_end:
 
 ; BACKGROUNDS
 bg_start:
