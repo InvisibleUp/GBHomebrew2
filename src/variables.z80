@@ -26,6 +26,12 @@ charArray:
 DS _get(`charStruct', `sizeof') * 6
 charStruct_end:
 
+; debugging thing: number of frames this anim
+AnimFrameCount:
+	DS 1
+AnimTableOff:
+	DS 1
+
 
 SECTION "SpriteTable",WRAMX[$DF00]
 SpriteTable:
@@ -50,6 +56,10 @@ JoypadButtons: ; First nybble (left to right) is direction, second is buttons
 	DS 1
 LastButtons:
 	DS 1
+JumpStreak:
+	DS 1
+JumpDone:
+	DS 1
 
 FieldX:
 	DS 2
@@ -57,17 +67,6 @@ ActiveObjectsBitfield ; Bit 7 = Object 1, Bit 0 = Object 8
 	DS 1
 ActiveObjectsCount
 	DS 1
-TurnInfo:
-	; Bit 7: Team selected by player. 0 = gecko, 1 = snowfox
-	; Bit 6: Team currently on offense
-	DS 1
-
-NextScanlineAction: ; Next scanline's action
-	DS 1
-NextScanlineArg: ; Argument for next scanline's action
-	DS 1
-ScanlineEffectsPointer:
-	DS 2
 
 ; Temp var section
 ; Expect a lot of overlap if I run out of HiRAM

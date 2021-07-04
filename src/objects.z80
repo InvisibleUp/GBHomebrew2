@@ -1,7 +1,10 @@
 SECTION "OBJECTS",ROM0
 
-ACCEL_X_LO EQU $20
-MAX_X_HI EQU $01
+ACCEL_X_LO        EQU $20
+MAX_X_HI          EQU $01
+JUMP_STREAK_MAX   EQU $08
+JUMP_STEP_DY      EQU $60
+JUMP_GRAVITY      EQU $40
 
 ; Create bitfield in a containing a list of active objects.
 ; This is clever because you can rr x; jr nc to skip easily.
@@ -50,6 +53,8 @@ ret
 TickObject_Animation:
 	define(`CHAROFFSET', _get(`charStruct', `start'))
 	RegisterPair(CHARSTRUCT, h, l)
+	; clear carry flag
+	xor a, a
 
 	; Set HL to charAnim
 	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `anim'), CHARSTRUCT_hi, CHARSTRUCT_lo)
@@ -62,9 +67,10 @@ TickObject_Animation:
 
 	; HL = Animation frame *= 2
 	RegisterPair(ANIMOFF, h, l)
-	rla
+	rlca
 	ld ANIMOFF_hi, 0
 	ld ANIMOFF_lo, a
+	ld [AnimTableOff], a
 	; Animation pointer (=HL) to relevant animation
 	add ANIMOFF_reg, ANIMBASE_reg
 	InvalidatePair(ANIMBASE)
@@ -83,6 +89,7 @@ TickObject_Animation:
 	RegisterSingle(FRAMEMAX, b)
 	inc ANIMDATA_reg ; DE = # of frames
 	ld a, ANIMDATA_ref
+	ld [AnimFrameCount], a ; debug
 	dec a ; Make zero-indexed
 	ld FRAMEMAX_reg, a
 
@@ -239,13 +246,8 @@ TickObject_PlayerInput:
 	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `dx'), CHAR_hi, CHAR_lo)
 
 ; Move player left/right with keys
-; We want to deaccelerate when:
-;	- Player has let go of all buttons
-;	- Player is trying to go opposite of DX
-; We want to accelerate when:
-;	- Player is not moving but is pressing a button
-;	- Player is trying to go same as DX
 
+.run_start:
 	RegisterPair(`dX', d, e)
 	ld dX_lo, CHAR_ref
 	inc CHAR_reg
@@ -262,11 +264,11 @@ TickObject_PlayerInput:
 	ldh a, [JoypadButtons]
 	and a, PADF_RIGHT | PADF_LEFT
 
-	ld b, a
+	ld STATE_reg, a
 	ldh a, [LastButtons]
 	and a, PADF_RIGHT | PADF_LEFT
 
-	xor a, b
+	xor a, STATE_reg
 	cp a, PADF_RIGHT | PADF_LEFT
 	jp z, .run_none ; yep!
 
@@ -341,6 +343,17 @@ TickObject_PlayerInput:
 	jp .run_setdir
 
 .run_setanim_stop
+	; holding down?
+	ldh a, [JoypadButtons]
+	and a, PADF_DOWN
+	jp z, .run_setanim_nocrouch
+
+	ld b, ANIM_CROUCH
+	call SetAnim
+	pop bc
+	jp .run_setdir
+
+.run_setanim_nocrouch
 	ld b, ANIM_IDLE
 	call SetAnim
 	pop bc
@@ -349,7 +362,7 @@ TickObject_PlayerInput:
 	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `info'), CHAR_hi, CHAR_lo)
 	ld a, STATE_reg
 	cp a, 0
-	jp z, .return
+	jp z, .jump_start
 
 	; left?
 	cp a, 1
@@ -359,18 +372,121 @@ TickObject_PlayerInput:
 	ld a, [hl]
 	or a, %01000000
 	ld [hl], a
-	jp .return
+	jp .jump_start
 
 .run_setdir_left:
 	ld a, [hl]
 	and a, %10111111
 	ld [hl], a
 
-.return
+.jump_start:
+	InvalidateSingle(`STATE')
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `dy'), CHAR_hi, CHAR_lo)
+
+	ldh a, [JoypadButtons]
+	and a, PADF_A
+	jp z, .jump_none
+
+	ldh a, [JumpDone]
+	and a
+	jp nz, .return
+
+.jump_tick:
+	; hit the jumpstreak max?
+	ldh a, [JumpStreak]
+	cp a, JUMP_STREAK_MAX
+	jp nc, .return
+
+	inc a
+	ldh [JumpStreak], a
+
+	; set animation
+	;ld b, ANIM_JUMP
+	;call SetAnim
+
+	; set player dY (lo)
+	inc CHAR_reg
+	ld a, CHAR_ref ; lo
+	sub a, JUMP_STEP_DY
+	ld CHAR_ref, a
+	jp nc, .jump_tick_lodone
+
+	dec CHAR_reg
+	dec CHAR_ref
+
+	; if jumpstreak <= 2, do this again
+	;ldh a, [JumpStreak]
+	;cp a, 2
+	;jp nc, .jump_tick
+	;jp .return
+
+	; sub one to y if jumpstreak = 1
+	ldh a, [JumpStreak]
+	cp a, 1
+	jp c, .return
+
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `y'), CHAR_hi, CHAR_lo)
+	dec CHAR_ref
+	dec CHAR_ref
+	dec CHAR_ref
+	dec CHAR_ref
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `dy'), CHAR_hi, CHAR_lo)
+	jp .return
+
+.jump_tick_lodone:
+	dec hl
+	jp .return
+
+.jump_none:
+	ld a, 1
+	ldh [JumpDone], a
+
+.return:
 	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `start'), CHAR_hi, CHAR_lo)
 	InvalidatePair(`CHAR')
-	InvalidateSingle(`STATE')
 	ret
+
+; Collision checking (right now just floor)
+; HL = object offset
+TickObject_PlayerCollision:
+	define(`CHAROFFSET', _get(`charStruct', `start'))
+	RegisterPair(`CHAR', h, l)
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `y'), CHAR_hi, CHAR_lo)
+	ld a, CHAR_ref ; y value
+	cp a, FieldHeight ; temporary
+	jp c, .setgravity
+
+	ld a, FieldHeight
+	ld CHAR_ref, a
+
+	ld a, 0
+	ldh [JumpStreak], a
+	ldh [JumpDone], a
+
+	; clear dY
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `dy'), CHAR_hi, CHAR_lo)
+	ld [hl+], a
+	ld [hl-], a
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `y'), CHAR_hi, CHAR_lo)
+	jp .return
+
+.setgravity:
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `dy'), CHAR_hi, CHAR_lo)
+	inc hl
+	ld a, [hl]
+	add a, JUMP_GRAVITY
+	ld [hl-], a
+	jp nc, .nocarry
+	
+	inc [hl]
+
+.nocarry
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `y'), CHAR_hi, CHAR_lo)
+
+.return:
+	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `start'), CHAR_hi, CHAR_lo)
+	ret
+
 
 ; HL = object offset
 TickObject:
@@ -381,6 +497,7 @@ TickObject:
 
 	; todo: put a jump table here depending on object type
 	call TickObject_PlayerInput
+	call TickObject_PlayerCollision
 
 .ObjActionDone:
 	; Do physics stuff
@@ -421,7 +538,7 @@ SampleObject:
 	DB $00, $80, $00 ; X
 	DB 0 ; Animation
 	DB 0 ; Frame
-	DB 5 ; Animation Speed
+	DB 0 ; Animation Speed
 	DB 0 ; Animation Timer
 	DB 0, 0 ; Dx
 	DB 0, 0 ; Dy

@@ -41,6 +41,30 @@ mappings_player_run2_right:
     DB 0, 0, 16, map_right | map_light
     DB 0, -8, 14, map_right | map_light
 
+mappings_player_crouch_left:
+    DB 1 ;length
+    DB 0,  0,  2, map_left | map_light
+mappings_player_crouch_right:
+    DB 1 ; length
+    DB 0,  0,  2, map_right | map_light
+
+mappings_player_jump_left:
+    DB 1 ;length
+    DB 0,  0,  4, map_left | map_light
+mappings_player_jump_right:
+    DB 1 ; length
+    DB 0,  0,  4, map_right | map_light
+
+mappings_player_fall_left:
+    DB 2 ; length
+    DB 0, 8, 6, map_left | map_light
+    DB 0, 0, 8, map_left | map_light
+mappings_player_fall_right:
+    DB 2 ; length
+    DB 0, 0, 8, map_right | map_light
+    DB 0, -8, 6, map_right | map_light
+
+
 mappings_end:
 
 animations_start:
@@ -65,19 +89,45 @@ animations_player_run:
     ; Right
     DW mappings_player_run1_right, mappings_player_run2_right
 
+animations_player_crouch:
+    DB 1 ; Number of sprites
+    DB 1 ; Number of frames
+    DB 0 ; Loop Action (bit7=0: go to frame bit0-6; bit7=1; go to anim bit0-6 frame 0)
+    DB 1 ; sprites * frames
+    ; Left
+    DW mappings_player_crouch_left
+    ; Right
+    DW mappings_player_crouch_right
+
+animations_player_jump:
+    DB 1 ; Number of sprites
+    DB 2 ; Number of frames
+    DB 0 ; Loop Action (bit7=0: go to frame bit0-6; bit7=1; go to anim bit0-6 frame 0)
+    DB 2 ; sprites * frames
+    ; Left
+    DW mappings_player_crouch_left, mappings_player_jump_left
+    ; Right
+    DW mappings_player_crouch_right, mappings_player_jump_right
+
 animations_end:
 
-ANIM_IDLE EQU 0
-ANIM_RUN  EQU 1
+ANIM_IDLE   EQU 0
+ANIM_RUN    EQU 1
+ANIM_CROUCH EQU 2
+ANIM_JUMP   EQU 3
 
 animations_pointers_start:
     DW animations_player_idle
     DW animations_player_run
+    DW animations_player_crouch
+    DW animations_player_jump
 animations_pointers_end:
 
 animations_speeds_start:
-    DB 1 ; idle
-    DB 3 ; run
+    DB $FF ; idle
+    DB $03 ; run
+    DB $FF ; crouch
+    DB $03 ; jump
 animations_speeds_end:
 
 ; BACKGROUNDS
