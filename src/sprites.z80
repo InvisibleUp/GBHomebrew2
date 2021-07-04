@@ -117,7 +117,7 @@ PrepareObject:
 
 	; Determine if we need to skip to right-facing mappings
 	ld a, [SpriteAttribs]
-	and a, %10000
+	and a, %1000000
 	jr nz, .skipRightAdjust
 
 	ld a, ANIMTABLE_ref

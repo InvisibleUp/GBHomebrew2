@@ -1,10 +1,8 @@
 ; OBJECT STRUCTURE
 _set(`charStruct', `start', 0)       
 ; bit 7 = is active?
-; bit 6 = team [Gecko = 0, Fox = 1]
-; bit 5 = animal or football? [0 or 1]
-; bit 4 = direction (1 = left, 0 = right)
-; bit 3 = offense/defense? (for bit5 = 0)
+; bit 6 = direction (1 = left, 0 = right)
+; bit 5-0 = object type
 _set(`charStruct', `info', 0)       
 _set(`charStruct', `y', 1)           ; Y position of object (unsigned 8.8)
 _set(`charStruct', `x', 3)           ; X position of object (unsigned 16.8)
@@ -17,7 +15,7 @@ _set(`charStruct', `dy', 12)         ; Vert. speed (signed 8.8)
 _set(`charStruct', `sizeof', 14)     ; Size of struct
 _set(`charStruct', `next', 14)       ; Offset to next struct
 
-FieldHeight EQU $60
+FieldHeight EQU $88
 
 SECTION "Variables",WRAM0[$C000]
 WramStart:
@@ -46,11 +44,6 @@ SpriteDMA_HiRAM:
 GlobalTimer:
 	DS 1
 WaitingForVBlank: ; 0 = waiting, 1 = busy
-	DS 1
-; TODO: is this a thing we need for acceleration?
-DirButtonStreak: ; Capped at 255
-	DS 1
-JumpButtonStreak:
 	DS 1
 
 JoypadButtons: ; First nybble (left to right) is direction, second is buttons

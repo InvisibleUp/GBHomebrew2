@@ -11,10 +11,15 @@ include "src/display.z80"    ; PPU routines
 include "src/joypad.z80"     ; Joypad routine
 include "src/math.z80"       ; Math macros & routines
 
-; Game stuff
+; Engine stuff
 include "src/gfxinclude.z80" ; Graphics data
 include "src/sprites.z80"    ; Sprite routines
 include "src/objects.z80"    ; Object/AI routines
+
+; Game modes
+include "src/GameModes/vizsplash.z80" ; InvisibleUp splash screen
+include "src/GameModes/game.z80"      ; main game
+
 
 SECTION "main", ROM0
 ; Interrupt handlers
@@ -42,163 +47,6 @@ clearRAM:
     call memset
 
     ret
-
-Inviz_LoadGFX:
-    di
-    WaitForVBlank
-    ei
-    call DisableLCD
-
-    ; Set scroll position
-    xor a
-    ld [rSCX], a
-    ld [rSCY], a
-
-    ; Load tile data
-    ld hl, invizsplash_tile_data
-    ld de, $9010
-    ld bc, invizsplash_tile_size
-    call memcpy
-
-    ; Load map data
-    ld de, invizsplash_map_data
-    ld hl, _SCRN0
-    ld b, invizsplash_map_width
-    ld c, invizsplash_map_height
-
-.copyloop
-    ld a, [de]
-    inc de
-    ld [hl+], a
-    dec b
-    jp nz, .copyloop
-
-    ld a, c
-    ld bc, (32 - invizsplash_map_width)
-    add hl, bc
-    ld b, invizsplash_map_width
-    ld c, a
-
-    dec c
-    jp nz, .copyloop
-
-    call EnableLCD
-    ret
-
-Game_LoadGFX:
-    di
-    WaitForVBlank
-    ei
-    call DisableLCD
-
-    ; Set scroll position
-    xor a
-    ld [rSCX], a
-    ld [rSCY], a
-
-    ; Load graphics
-    ld hl, gfx_start
-    ld de, _VRAM
-    ld bc, gfx_end - gfx_start
-    call memcpy
-
-    ld hl, font
-    ld de, _VRAM + $800
-    ld bc, font_end - font
-    call memcpy
-
-    ld hl, bg_start
-    ld de, _VRAM + $1000
-    ld bc, bg_end - bg_start
-    call memcpy
-
-    ; Load background
-    ld de, bgmap_start
-    ld hl, _SCRN0
-    ld b, 18
-.bgLoop_Row:
-    ld c, 32
-.bgLoop_Column:
-    ld a, [de]
-    ld [hl+], a
-    dec c
-    jr nz, .bgLoop_Column
-
-    inc de
-    dec b
-    jr nz, .bgLoop_Row
-
-    ; Lay down some text
-;    ld hl, _SCRN0 + 32
-;    ld a, $85
-;    ld [hl+], a
-;    ld [hl+], a
-;    ld [hl+], a
-;    ld [hl+], a
-
-    call EnableLCD
-
-ret
-
-; Inviz splash screen loop
-InvizLoop:
-    call Inviz_LoadGFX
-    ld b, $FF
-
-.inviz_loop:
-    di
-    WaitForVBlank
-    ei
-    dec b 
-    jp nz, .inviz_loop
-
-    ret
-
-GameLoop:
-    ; Load in-game GFX
-    call Game_LoadGFX
-    
-    ; Init objects
-    ld hl, SampleObject
-    ld de, charArray
-    ld bc, _get(`charStruct', `sizeof')
-    call memcpy
-
-    call EnableLCD
-    ei
-
-.loop:
-    ; Reset scroll layer
-	xor a
-	ldh [rSCX], a
-
-    ; Get frame data ready
-    call GenerateActiveObjectsBitfield 
-    call readJoypad
-
-    ; Game logic
-    call TickAllObjects
-
-    ; Prepare graphics data
-    call PrepareAllObjects
-
-    ; Tick global timer
-    ldh a, [GlobalTimer]
-    inc a
-    ldh [GlobalTimer], a
-
-    ; Wait for VBlank before looping
-    ; TODO: Create an exit condition
-    ; Wait for VBlank
-    xor a
-    ld [WaitingForVBlank], a
-.VBlankWait
-    halt
-    ld a, [WaitingForVBlank]
-    or a
-    jr z, .VBlankWait
-
-    jr .loop
 
 ; Main Loop
 main:

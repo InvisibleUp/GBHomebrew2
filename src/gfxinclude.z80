@@ -11,34 +11,35 @@ spr_player:
 gfx_end:
 
 mappings_start:
-; Format: Y, X, Tile, Metadata
-map_right EQU %10000
-map_left EQU %110000
+; Format: Y, X, Tile, OAM Metadata
+map_right EQU %00000000
+map_left  EQU %00100000
+map_light EQU %00010000
 
 mappings_player_idle_left:
     DB 1 ; length
-    DB 0,  0,  0, map_left
+    DB 0,  0,  0, map_left | map_light
 mappings_player_idle_right:
     DB 1 ; length
-    DB 0,  0,  0, map_right
+    DB 0,  0,  0, map_right | map_light
 
 mappings_player_run1_left:
     DB 2 ; length
-    DB 0, 8, 10, map_left
-    DB 0, 0, 12, map_left
+    DB 0, 8, 10, map_left | map_light
+    DB 0, 0, 12, map_left | map_light
 mappings_player_run1_right:
     DB 2 ; length
-    DB 0, 8, 12, map_right
-    DB 0, 0, 10, map_right
+    DB 0, 8, 12, map_right | map_light
+    DB 0, 0, 10, map_right | map_light
 
 mappings_player_run2_left:
     DB 2 ; length
-    DB 0, 8, 14, map_left
-    DB 0, 0, 16, map_left
+    DB 0, 8, 14, map_left | map_light
+    DB 0, 0, 16, map_left | map_light
 mappings_player_run2_right:
     DB 2 ; length
-    DB 0, 8, 16, map_right
-    DB 0, 0, 14, map_right
+    DB 0, 8, 16, map_right | map_light
+    DB 0, 0, 14, map_right | map_light
 
 mappings_end:
 
@@ -67,8 +68,8 @@ animations_player_run:
 animations_end:
 
 animations_pointers_start:
-    DW animations_player_run
     DW animations_player_idle
+    DW animations_player_run
 animations_pointers_end:
 
 ; BACKGROUNDS
@@ -78,32 +79,32 @@ bg_start:
 define(`dgfx', changequote([, ])[changequote([,])dw `changequote(`,')]changequote(`,'))
 
 bg_sky:
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'00000000
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'11111111
 bg_grass:
-    dgfx`'12121112
-    dgfx`'12121212
-    dgfx`'22112211
-    dgfx`'11121212
-    dgfx`'22112211
-    dgfx`'21212121
-    dgfx`'12121212
-    dgfx`'12211222
+    dgfx`'23232223
+    dgfx`'23232323
+    dgfx`'33223322
+    dgfx`'22232323
+    dgfx`'33223322
+    dgfx`'32323232
+    dgfx`'23232323
+    dgfx`'23322333
 bg_sky_grass:
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'00000000
-    dgfx`'20020000
-    dgfx`'20202020
-    dgfx`'02021212
-    dgfx`'12211222
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'11111111
+    dgfx`'31131111
+    dgfx`'31313131
+    dgfx`'13132323
+    dgfx`'23322333
 bg_dirt:
     dgfx`'00110011
     dgfx`'00000000

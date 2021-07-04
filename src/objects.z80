@@ -370,20 +370,15 @@ TickObject:
 	ld a, [hl]
 	rla
 	ret nc ; Return if not active
-	; A = [team],[type],[dir],[position],X,X,X,X
-	; Check if type == football, and if so, skip this all
-	bit 6, a
-	jr nz, .AnimalActionDone
 	; Otherwise "call" the proper dispatch function
 	; Push the return address so that ret still works, but we
 	; don't have to fiddle with jumps after the call
-	ld bc, .AnimalActionDone
+	ld bc, .PlayerActionDone
 	push bc
-	bit 4, a
-	jp z, TickObject_Offense
-	jp TickObject_AI_Defense ; All defense is AI controlled
+	; todo: put a jump table here
+	jp TickObject_Offense
 
-.AnimalActionDone:
+.PlayerActionDone:
 	; Do physics stuff
 	call TickObject_Physics
 	; Do animaton stuff
@@ -417,12 +412,12 @@ TickAllObjects:
 
 ; Just the definition for a sample object
 SampleObject:
-	DB %11010000 ; charInfo (snowfox, left)
+	DB %11000000 ; charInfo (active, left, player)
 	DB FieldHeight, $00 ; Y
 	DB $00, $80, $00 ; X
 	DB 0 ; Animation
 	DB 0 ; Frame
 	DB 5 ; Animation Speed
 	DB 0 ; Animation Timer
-	DB 1, 0 ; Dx
+	DB 0, 0 ; Dx
 	DB 0, 0 ; Dy

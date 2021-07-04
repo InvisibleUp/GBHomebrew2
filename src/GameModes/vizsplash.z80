@@ -1,0 +1,55 @@
+Inviz_LoadGFX:
+    di
+    WaitForVBlank
+    ei
+    call DisableLCD
+
+    ; Set scroll position
+    xor a
+    ld [rSCX], a
+    ld [rSCY], a
+
+    ; Load tile data
+    ld hl, invizsplash_tile_data
+    ld de, $9010
+    ld bc, invizsplash_tile_size
+    call memcpy
+
+    ; Load map data
+    ld de, invizsplash_map_data
+    ld hl, _SCRN0
+    ld b, invizsplash_map_width
+    ld c, invizsplash_map_height
+
+.copyloop
+    ld a, [de]
+    inc de
+    ld [hl+], a
+    dec b
+    jp nz, .copyloop
+
+    ld a, c
+    ld bc, (32 - invizsplash_map_width)
+    add hl, bc
+    ld b, invizsplash_map_width
+    ld c, a
+
+    dec c
+    jp nz, .copyloop
+
+    call EnableLCD
+    ret
+
+; Inviz splash screen loop
+InvizLoop:
+    call Inviz_LoadGFX
+    ld b, $FF ; 255 frames
+
+.inviz_loop:
+    di
+    WaitForVBlank
+    ei
+    dec b 
+    jp nz, .inviz_loop
+
+    ret
