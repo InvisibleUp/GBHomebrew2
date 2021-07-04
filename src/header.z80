@@ -31,8 +31,6 @@ SECTION "serial",ROM0[$58]
 SECTION "joypad",ROM0[$60]
 	reti
 
-SECTION "bank0",ROM0[$61]
-
 SECTION "romheader",ROM0[$100]
 nop
 jp main

@@ -6,132 +6,42 @@ splash_inviz:
     include "gfx/invizsplash.inc"
 
 gfx_start:
-gfx_arcticfox_standing:
-arcticfox_standing_tile EQU 0
-    incbin "gfx/bin/arcticfox-standing.png.bin"
-
-gfx_arcticfox_tail0000:
-arcticfox_tail_tile EQU ((gfx_arcticfox_tail0000 - gfx_arcticfox_standing) / 16)
-    incbin "gfx/bin/arcticfox-tail0000.png.bin"
-
-gfx_arcticfox_tail0001:
-;arcticfox_tail0001_tile RB (gfx_arcticfox_tail0001 - gfx_arcticfox_tail0000) / 64
-    incbin "gfx/bin/arcticfox-tail0001.png.bin"
-
-gfx_arcticfox_tail0002:
-;arcticfox_tail0002_tile RB (gfx_arcticfox_tail0002 - gfx_arcticfox_tail0001) / 64
-    incbin "gfx/bin/arcticfox-tail0002.png.bin"
-
-gfx_arcticfox_tail0003:
-;arcticfox_tail0003_tile RB (gfx_arcticfox_tail0003 - gfx_arcticfox_tail0002) / 64
-    incbin "gfx/bin/arcticfox-tail0003.png.bin"
-
-gfx_arcticfox_thinking0000:
-arcticfox_thinking_tile EQU (gfx_arcticfox_thinking0000 - gfx_start) / 16
-;arcticfox_thinking0000_tile RB (gfx_arcticfox_thinking0000 - gfx_arcticfox_tail0003) / 64
-    incbin "gfx/bin/arcticfox-thinking0000.png.bin"
-
-gfx_arcticfox_thinking0001:
-;arcticfox_thinking0001_tile RB (gfx_arcticfox_thinking0001 - gfx_arcticfox_thinking0000) / 64
-    incbin "gfx/bin/arcticfox-thinking0001.png.bin"
-
-gfx_gecko_standing:
-gecko_standing_tile EQU (gfx_gecko_standing - gfx_start) / 16
-    incbin "gfx/bin/gecko-standing.png.bin"
-
-gfx_gecko_thinking0000:
-gecko_thinking_tile EQU (gfx_gecko_thinking0000 - gfx_start) / 16
-    incbin "gfx/bin/gecko-thinking0000.png.bin"
-gfx_gecko_thinking0001:
-    incbin "gfx/bin/gecko-thinking0001.png.bin"
+spr_player:
+    incbin "gfx/bin/spr_player.png.bin"
 gfx_end:
 
 mappings_start:
 ; Format: Y, X, Tile, Metadata
-arcticfox_metadata_right EQU %10000
-arcticfox_metadata_left EQU %110000
+player_metadata_right EQU %10000
+player_metadata_left EQU %110000
 
-mappings_arcticfox_standing_right:
-    DB 4 ; length
-    DB -16,  -8, arcticfox_standing_tile+0, arcticfox_metadata_right ; Top-left
-    DB   0,  -8, arcticfox_standing_tile+2, arcticfox_metadata_right ; Bottom-left
-    DB -16,   0, arcticfox_standing_tile+4, arcticfox_metadata_right ; Top-right
-    DB   0,   0, arcticfox_standing_tile+6, arcticfox_metadata_right ; Bottom-right
+mappings_player_idle_left:
+    DB 1 ; length
+    DB 0,  0,  0, player_metadata_left
 
-mappings_arcticfox_standing_left:
-    DB 4 ; length
-    DB -16,   0, arcticfox_standing_tile+0, arcticfox_metadata_left ; Top-right
-    DB   0,   0, arcticfox_standing_tile+2, arcticfox_metadata_left ; Bottom-right
-    DB -16,  -8, arcticfox_standing_tile+4, arcticfox_metadata_left ; Top-left
-    DB   0,  -8, arcticfox_standing_tile+6, arcticfox_metadata_left ; Bottom-left
-       
-mappings_arcticfox_tail_right_1:
-    DB 2
-    DB   0, -16, arcticfox_tail_tile+0,     arcticfox_metadata_right  ; Tail left
-    DB   0,  -8, arcticfox_tail_tile+2,     arcticfox_metadata_right ; Tail right
-       
-mappings_arcticfox_tail_right_2:
-    DB 2
-    DB   0, -16, arcticfox_tail_tile+4,     arcticfox_metadata_right  ; Tail left
-    DB   0,  -8, arcticfox_tail_tile+6,     arcticfox_metadata_right ; Tail right
-       
-mappings_arcticfox_tail_right_3:
-    DB 2
-    DB   0, -16, arcticfox_tail_tile+8,     arcticfox_metadata_right  ; Tail left
-    DB   0,  -8, arcticfox_tail_tile+10,    arcticfox_metadata_right ; Tail right
-       
-mappings_arcticfox_tail_right_4:
-    DB 2
-    DB   0, -16, arcticfox_tail_tile+12,    arcticfox_metadata_right  ; Tail left
-    DB   0,  -8, arcticfox_tail_tile+14,    arcticfox_metadata_right ; Tail right
-       
-mappings_arcticfox_tail_left_1:
-    DB 2
-    DB   0,   8, arcticfox_tail_tile+0,     arcticfox_metadata_left  ; Tail right
-    DB   0,   0, arcticfox_tail_tile+2,     arcticfox_metadata_left ; Tail left
-       
-mappings_arcticfox_tail_left_2:
-    DB 2
-    DB   0,   8, arcticfox_tail_tile+4,     arcticfox_metadata_left  ; Tail right
-    DB   0,   0, arcticfox_tail_tile+6,     arcticfox_metadata_left ; Tail left
-       
-mappings_arcticfox_tail_left_3:
-    DB 2
-    DB   0,   8, arcticfox_tail_tile+8,     arcticfox_metadata_left  ; Tail right
-    DB   0,   0, arcticfox_tail_tile+10,    arcticfox_metadata_left ; Tail left
-       
-mappings_arcticfox_tail_left_4:
-    DB 2
-    DB   0,   8, arcticfox_tail_tile+12,    arcticfox_metadata_left  ; Tail right
-    DB   0,   0, arcticfox_tail_tile+14,    arcticfox_metadata_left ; Tail left
+mappings_player_idle_right:
+    DB 1 ; length
+    DB 0,  0,  0, player_metadata_right ; Bottom-left
 
 mappings_end:
 
 animations_start:
 
-animations_arcticfox_standing:
-    DB 2 ; Number of sprites
-    DB 4 ; Number of frames
+animations_player_idle:
+    DB 1 ; Number of sprites
+    DB 1 ; Number of frames
     DB 0 ; Loop Action (bit7=0: go to frame bit0-6; bit7=1; go to anim bit0-6 frame 0)
     DB 8 ; sprites * frames
     ; Left
-    DW mappings_arcticfox_standing_left, mappings_arcticfox_standing_left
-    DW mappings_arcticfox_standing_left, mappings_arcticfox_standing_left
-    
-    DW mappings_arcticfox_tail_left_1, mappings_arcticfox_tail_left_2
-    DW mappings_arcticfox_tail_left_3, mappings_arcticfox_tail_left_4
+    DW mappings_player_idle_left
 
     ; Right
-    DW mappings_arcticfox_standing_right, mappings_arcticfox_standing_right
-    DW mappings_arcticfox_standing_right, mappings_arcticfox_standing_right    
-    
-    DW mappings_arcticfox_tail_right_1, mappings_arcticfox_tail_right_2
-    DW mappings_arcticfox_tail_right_3, mappings_arcticfox_tail_right_4
+    DW mappings_player_idle_right
 
 animations_end:
 
 animations_pointers_start:
-    DW animations_arcticfox_standing
+    DW animations_player_idle
 animations_pointers_end:
 
 ; BACKGROUNDS
@@ -201,6 +111,6 @@ bgmap_start:
 bgmap_end:
 
 font:
-    incbin "gfx/bin/8x8font.png.bin"
+    incbin "gfx/bin/8x8letters.png.bin"
     incbin "gfx/bin/8x8numbers.png.bin"
 font_end:
