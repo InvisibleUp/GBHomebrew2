@@ -32,6 +32,12 @@ AnimFrameCount:
 AnimTableOff:
 	DS 1
 
+; player stuff
+PlayerInAir:
+	DS 1
+PlayerRunState:
+	DS 1
+
 
 SECTION "SpriteTable",WRAMX[$DF00]
 SpriteTable:

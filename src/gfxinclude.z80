@@ -109,25 +109,38 @@ animations_player_jump:
     ; Right
     DW mappings_player_crouch_right, mappings_player_jump_right
 
+animations_player_fall:
+    DB 1 ; Number of sprites
+    DB 1 ; Number of frames
+    DB 0 ; Loop Action (bit7=0: go to frame bit0-6; bit7=1; go to anim bit0-6 frame 0)
+    DB 1 ; sprites * frames
+    ; Left
+    DW mappings_player_fall_left
+    ; Right
+    DW mappings_player_fall_right
+
 animations_end:
 
 ANIM_IDLE   EQU 0
 ANIM_RUN    EQU 1
 ANIM_CROUCH EQU 2
 ANIM_JUMP   EQU 3
+ANIM_FALL   EQU 4
 
 animations_pointers_start:
     DW animations_player_idle
     DW animations_player_run
     DW animations_player_crouch
     DW animations_player_jump
+    DW animations_player_fall
 animations_pointers_end:
 
 animations_speeds_start:
     DB $FF ; idle
     DB $03 ; run
     DB $FF ; crouch
-    DB $03 ; jump
+    DB $08 ; jump
+    DB $08 ; fall
 animations_speeds_end:
 
 ; BACKGROUNDS

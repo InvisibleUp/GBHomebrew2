@@ -238,7 +238,7 @@ PrepareAllObjects:
 	; clear OAM
 	ld hl, SpriteTable
 	ld bc, $9F
-	ld a, 0
+	xor a, a
 	call memset
 
 	ld d, HIGH(SpriteTable)
@@ -295,13 +295,13 @@ SetAnim:
 	ld a, b
 	ld [hl+], a
 	; frame
-	ld a, 0
+	xor a, a
 	ld [hl+], a
 	; speed
 	ld a, [de]
 	ld [hl+], a
 	; timer
-	ld a, 0
+	xor a, a
 	ld [hl], a
 .return
 	pop hl
