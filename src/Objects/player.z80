@@ -39,7 +39,7 @@ Player_Input:
 	and a, PADF_RIGHT | PADF_LEFT
 
 	xor a, b
-	ld [PlayerRunState], a
+	ldh [PlayerRunState], a
 	cp a, PADF_RIGHT | PADF_LEFT
 	jp z, .run_none ; yep!
 
@@ -50,10 +50,10 @@ Player_Input:
 
 	; set state
 	ld a, 1
-	ld [PlayerRunState], a
+	ldh [PlayerRunState], a
 	jp nz, .run_right
 	ld a, 2
-	ld [PlayerRunState], a
+	ldh [PlayerRunState], a
 
 	; negate de
 	xor a
@@ -95,7 +95,7 @@ Player_Input:
 .run_none
 	ld de, 0
 	xor a, a
-	ld [PlayerRunState], a
+	ldh [PlayerRunState], a
 
 .run_done
 	; load de into [hl]
@@ -176,7 +176,7 @@ Player_Collision:
 
 	xor a, a
 	ldh [JumpStreak], a
-	ld [PlayerInAir], a
+	ldh [PlayerInAir], a
 
 	; set JumpDone if not holding a
 	ldh a, [JoypadButtons]
@@ -192,7 +192,7 @@ Player_Collision:
 
 .setgravity:
 	ld a, 1
-	ld [PlayerInAir], a
+	ldh [PlayerInAir], a
 
 	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `dy'), CHAR_hi, CHAR_lo)
 	inc hl
@@ -215,7 +215,7 @@ Player_SetAnim:
 	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `anim'), CHAR_hi, CHAR_lo)
 
 	; jumping?
-	ld a, [PlayerInAir]
+	ldh a, [PlayerInAir]
 	and a
 	jp z, .run
 
@@ -242,7 +242,7 @@ Player_SetAnim:
 	jp .setdir
 
 .run
-	ld a, [PlayerRunState]
+	ldh a, [PlayerRunState]
 	cp a, 0
 	jp z, .run_stop
 
@@ -266,7 +266,7 @@ Player_SetAnim:
 
 .setdir
 	SeekStructAndSet(`CHAROFFSET', _get(`charStruct', `info'), CHAR_hi, CHAR_lo)
-	ld a, [PlayerRunState]
+	ldh a, [PlayerRunState]
 	cp a, 0
 	jp z, .return
 

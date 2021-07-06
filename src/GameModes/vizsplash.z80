@@ -1,3 +1,5 @@
+SECTION "GM_VIZSPLASH",ROM0
+
 Inviz_LoadGFX:
     di
     WaitForVBlank

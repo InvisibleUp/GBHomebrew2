@@ -1,5 +1,4 @@
 SECTION "OBJECTS",ROM0
-
 include "src/Objects/player.z80"      ; player character
 
 ; Create bitfield in a containing a list of active objects.
@@ -66,7 +65,6 @@ TickObject_Animation:
 	rlca
 	ld ANIMOFF_hi, 0
 	ld ANIMOFF_lo, a
-	ld [AnimTableOff], a
 	; Animation pointer (=HL) to relevant animation
 	add ANIMOFF_reg, ANIMBASE_reg
 	InvalidatePair(ANIMBASE)
@@ -85,7 +83,6 @@ TickObject_Animation:
 	RegisterSingle(FRAMEMAX, b)
 	inc ANIMDATA_reg ; DE = # of frames
 	ld a, ANIMDATA_ref
-	ld [AnimFrameCount], a ; debug
 	dec a ; Make zero-indexed
 	ld FRAMEMAX_reg, a
 

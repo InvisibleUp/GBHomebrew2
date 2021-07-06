@@ -20,23 +20,24 @@ FieldHeight EQU $88
 SECTION "Variables",WRAM0[$C000]
 WramStart:
 
-;SECTION "ObjectTable",WRAM0[$C100]
-; Define (6 or 8?) objects
+; Define 8 objects
 charArray:
-DS _get(`charStruct', `sizeof') * 6
+DS _get(`charStruct', `sizeof') * 8
 charStruct_end:
 
-; debugging thing: number of frames this anim
-AnimFrameCount:
-	DS 1
-AnimTableOff:
-	DS 1
-
-; player stuff
-PlayerInAir:
-	DS 1
-PlayerRunState:
-	DS 1
+; Define level map
+LVL_MIN_WIDTH  EQU 20
+LVL_MIN_HEIGHT EQU 16
+LVL_MAX_WIDTH  EQU LVL_MIN_WIDTH  * 4
+LVL_MAX_HEIGHT EQU LVL_MIN_HEIGHT * 4
+LvlOrient:
+	DS 1 ; 0 = horiz, 1 = vert
+LvlLength:
+	DS 1 ; length in tiles of map along LvlOrient
+LvlCollision:
+	DS (LVL_MIN_WIDTH * LVL_MAX_HEIGHT)/2 ; 640 bytes
+LvlGfxMap:
+	DS LVL_MIN_WIDTH * LVL_MAX_HEIGHT ; 1280 bytes
 
 
 SECTION "SpriteTable",WRAMX[$DF00]
@@ -65,6 +66,12 @@ LastButtons:
 JumpStreak:
 	DS 1
 JumpDone:
+	DS 1
+
+; player stuff
+PlayerInAir:
+	DS 1
+PlayerRunState:
 	DS 1
 
 FieldX:
