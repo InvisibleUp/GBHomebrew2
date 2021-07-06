@@ -18,8 +18,7 @@ include "src/objects.z80"    ; Object/AI routines
 
 ; Game modes
 include "src/GameModes/vizsplash.z80" ; InvisibleUp splash screen
-include "src/GameModes/game.z80"      ; main game
-
+include "src/GameModes/main.z80"      ; main game
 
 SECTION "main", ROM0
 ; Interrupt handlers
@@ -82,6 +81,14 @@ main:
     ld de, $FF80
     ld bc, SpriteDMA_End - SpriteDMA
     call memcpy
+
+    ; Enable sound playback
+    ld a, $80
+    ld [rAUDENA], a
+    ld a, $FF
+    ld [rAUDTERM], a
+    ld a, $77
+    ld [rAUDVOL], a
 
     call InitDisplay
     ;call InvizLoop

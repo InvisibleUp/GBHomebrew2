@@ -1,0 +1,101 @@
+SECTION "GM_MAIN",ROM0
+
+Game_LoadGFX:
+    di
+    WaitForVBlank
+    ei
+    call DisableLCD
+
+    ; Set scroll position
+    xor a
+    ld [rSCX], a
+    ld [rSCY], a
+
+    ; Load graphics
+    ld hl, gfx_start
+    ld de, _VRAM
+    ld bc, gfx_end - gfx_start
+    call memcpy
+
+    ld hl, font
+    ld de, _VRAM + $800
+    ld bc, font_end - font
+    call memcpy
+
+    ld hl, bg_start
+    ld de, _VRAM + $1000
+    ld bc, bg_end - bg_start
+    call memcpy
+
+    ; Load background
+    ld de, bgmap_start
+    ld hl, _SCRN0
+    ld b, 18
+.bgLoop_Row:
+    ld c, 32
+.bgLoop_Column:
+    ld a, [de]
+    ld [hl+], a
+    dec c
+    jr nz, .bgLoop_Column
+
+    inc de
+    dec b
+    jr nz, .bgLoop_Row
+
+    call EnableLCD
+
+ret
+
+GameLoop:
+    ; Load in-game GFX
+    call Game_LoadGFX
+
+    ; Load music
+    ld hl, ryukenden
+    call hUGE_init
+    
+    ; Init objects
+    ld hl, SampleObject
+    ld de, charArray
+    ld bc, _get(`charStruct', `sizeof')
+    call memcpy
+
+    call EnableLCD
+    ei
+
+.loop:
+    ; Reset scroll layer
+	xor a
+	ldh [rSCX], a
+
+    ; Get frame data ready
+    call GenerateActiveObjectsBitfield 
+    call readJoypad
+
+    ; Game logic
+    call TickAllObjects
+
+    ; Prepare graphics data
+    call PrepareAllObjects
+
+    ; Tick global timer
+    ldh a, [GlobalTimer]
+    inc a
+    ldh [GlobalTimer], a
+
+    ; Music tick
+    call _hUGE_dosound
+
+    ; Wait for VBlank before looping
+    ; TODO: Create an exit condition
+    ; Wait for VBlank
+    xor a
+    ld [WaitingForVBlank], a
+.VBlankWait
+    halt
+    ld a, [WaitingForVBlank]
+    or a
+    jr z, .VBlankWait
+
+    jr .loop
