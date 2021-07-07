@@ -2,9 +2,11 @@ SECTION "INTERRUPTS",ROM0
 ; LCDC (screen y match)
 lcdc:
     ; disable window
+    push af
     ldh a, [rLCDC]
     res LCDCB_WINON, a
     ldh [rLCDC], a
+    pop af
 	reti
 
 ; Vertical blank

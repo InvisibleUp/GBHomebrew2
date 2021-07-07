@@ -1,8 +1,5 @@
 SECTION "GM_MAIN",ROM0
 
-SampleWindow:
-    DB $87, $84, $8B, $8B, $8E, $A4, $96, $8E, $91, $8B, $83, $A4 ; HELLO WORLD
-
 Game_LoadGFX:
     di
     WaitForVBlank
@@ -88,19 +85,53 @@ CheckPaused:
 .do_unpause:
     xor a
     ldh [IsPaused], a ; 0
+
     ; fix moonwalk glitch by cancelling left/right
     ldh a, [JoypadButtons]
     and a, ~(PADF_LEFT | PADF_RIGHT)
     ldh [JoypadButtons], a 
+
+    ; set window position
     ld a, 16 ; lines for gameplay
     ldh [WindowYTarget], a
+
+    ; unmute music
+    ld b, 0
+    ld c, 0
+    call hUGE_mute_channel
+    ld b, 1
+    ld c, 0
+    call hUGE_mute_channel
+    ld b, 2
+    ld c, 0
+    call hUGE_mute_channel
+    ld b, 3
+    ld c, 0
+    call hUGE_mute_channel
+
     jp .return
 
 .do_pause:
     ld a, 1
     ldh [IsPaused], a
+
+    ; set window position
     ld a, 40 ; lines for pause menu
     ldh [WindowYTarget], a
+
+    ; unmute music
+    ld b, 0
+    ld c, 1
+    call hUGE_mute_channel
+    ld b, 1
+    ld c, 1
+    call hUGE_mute_channel
+    ld b, 2
+    ld c, 1
+    call hUGE_mute_channel
+    ld b, 3
+    ld c, 1
+    call hUGE_mute_channel
 
 .return
     ret
@@ -133,8 +164,8 @@ GameLoop:
     call Game_LoadGFX
 
     ; Load music
-    ;ld hl, ryukenden
-    ;call hUGE_init
+    ld hl, ryukenden
+    call hUGE_init
     
     ; Init objects
     ld hl, SampleObject
@@ -187,7 +218,7 @@ GameLoop:
     call PrepareAllObjects
 
     ; Music tick
-    ;call _hUGE_dosound
+    call _hUGE_dosound
 
     ; Wait for VBlank before looping
     ; TODO: Create an exit condition
