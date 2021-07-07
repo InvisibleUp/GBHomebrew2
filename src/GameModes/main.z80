@@ -1,5 +1,8 @@
 SECTION "GM_MAIN",ROM0
 
+SampleWindow:
+    DB $87, $84, $8B, $8B, $8E, $A4, $96, $8E, $91, $8B, $83, $A4 ; HELLO WORLD
+
 Game_LoadGFX:
     di
     WaitForVBlank
@@ -43,8 +46,27 @@ Game_LoadGFX:
     dec b
     jr nz, .bgLoop_Row
 
-    call EnableLCD
+    ; make a super basic window tilemap
+    ld hl, _SCRN1
+    ld bc, $0400
+    ld a, $80
+    call memset ; AAAAAAAAA
 
+    ldh a, [rLCDC]
+    set LCDCB_WINADDR, a
+    ldh [rLCDC], a
+    ld a, 0
+    ldh [rWY], a
+    ld a, 7
+    ldh [rWX], a
+
+    ; set interrupt for line whatever to turn window off
+    ld a, 16
+    ldh [WindowY], a
+    ldh [WindowYTarget], a
+    ldh [rLYC], a
+    ld a, STATF_LYC
+    ldh [rSTAT], a 
 ret
 
 ; super basic
@@ -62,6 +84,7 @@ CheckPaused:
     ldh a, [IsPaused]
     and a
     jp z, .do_pause
+
 .do_unpause:
     xor a
     ldh [IsPaused], a ; 0
@@ -69,12 +92,41 @@ CheckPaused:
     ldh a, [JoypadButtons]
     and a, ~(PADF_LEFT | PADF_RIGHT)
     ldh [JoypadButtons], a 
+    ld a, 16 ; lines for gameplay
+    ldh [WindowYTarget], a
     jp .return
+
 .do_pause:
     ld a, 1
     ldh [IsPaused], a
+    ld a, 40 ; lines for pause menu
+    ldh [WindowYTarget], a
+
 .return
     ret
+
+SetWindowPos:
+    ldh a, [WindowYTarget]
+    ld b, a
+    ldh a, [WindowY]
+    sub a, b
+    jp z, .return
+    jp c, .increase
+
+.decrease:
+    ldh a, [WindowY]
+    dec a
+    ldh [WindowY], a
+    ret
+
+.increase:
+    ldh a, [WindowY]
+    inc a
+    ldh [WindowY], a
+
+.return:
+    ret
+
 
 GameLoop:
     ; Load in-game GFX
@@ -101,6 +153,23 @@ GameLoop:
 	xor a
 	ldh [rSCX], a
 
+    ; Re-enable window
+    ldh a, [rLCDC]
+    set LCDCB_WINON, a
+    ldh [rLCDC], a
+
+    ; Set new window position
+    call SetWindowPos
+
+    ; set window position
+    ldh a, [WindowY]
+    ldh [rLYC], a
+
+    ; Tick global timer
+    ldh a, [GlobalTimer]
+    inc a
+    ldh [GlobalTimer], a
+
     ; Get frame data ready
     call GenerateActiveObjectsBitfield 
     call readJoypad
@@ -116,11 +185,6 @@ GameLoop:
 
     ; Prepare graphics data
     call PrepareAllObjects
-
-    ; Tick global timer
-    ldh a, [GlobalTimer]
-    inc a
-    ldh [GlobalTimer], a
 
     ; Music tick
     ;call _hUGE_dosound
