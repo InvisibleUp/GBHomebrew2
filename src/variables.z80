@@ -67,6 +67,8 @@ JumpStreak:
 	DS 1
 JumpDone:
 	DS 1
+IsPaused:
+	DS 1
 
 ; player stuff
 PlayerInAir:

@@ -47,19 +47,51 @@ Game_LoadGFX:
 
 ret
 
+; super basic
+CheckPaused:
+    ; Start pressed this frame but not last frame?
+    ldh a, [JoypadButtons]
+    ld b, a
+    ldh a, [LastButtons]
+    cpl
+    and a, b ; JoypadButtons & ~LastButtons
+    and a, PADF_START
+    jp z, .return
+
+    ; actually check pause flag
+    ldh a, [IsPaused]
+    and a
+    jp z, .do_pause
+.do_unpause:
+    xor a
+    ldh [IsPaused], a ; 0
+    ; fix moonwalk glitch by cancelling left/right
+    ldh a, [JoypadButtons]
+    and a, ~(PADF_LEFT | PADF_RIGHT)
+    ldh [JoypadButtons], a 
+    jp .return
+.do_pause:
+    ld a, 1
+    ldh [IsPaused], a
+.return
+    ret
+
 GameLoop:
     ; Load in-game GFX
     call Game_LoadGFX
 
     ; Load music
-    ld hl, ryukenden
-    call hUGE_init
+    ;ld hl, ryukenden
+    ;call hUGE_init
     
     ; Init objects
     ld hl, SampleObject
     ld de, charArray
     ld bc, _get(`charStruct', `sizeof')
     call memcpy
+
+    xor a, a
+    ldh [IsPaused], a
 
     call EnableLCD
     ei
@@ -73,6 +105,12 @@ GameLoop:
     call GenerateActiveObjectsBitfield 
     call readJoypad
 
+    ; check if we need to pause
+    call CheckPaused
+    ldh a, [IsPaused]
+    and a
+    jp nz, .VBlankWaitPrepare
+
     ; Game logic
     call TickAllObjects
 
@@ -85,11 +123,12 @@ GameLoop:
     ldh [GlobalTimer], a
 
     ; Music tick
-    call _hUGE_dosound
+    ;call _hUGE_dosound
 
     ; Wait for VBlank before looping
     ; TODO: Create an exit condition
     ; Wait for VBlank
+.VBlankWaitPrepare
     xor a
     ld [WaitingForVBlank], a
 .VBlankWait
