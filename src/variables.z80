@@ -53,6 +53,9 @@ HramStart: ; 127 bytes
 SpriteDMA_HiRAM:
 	DS 10
 
+; State variables
+ConsoleType:
+	DS 1
 GlobalTimer:
 	DS 1
 WaitingForVBlank: ; 0 = waiting, 1 = busy

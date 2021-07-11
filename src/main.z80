@@ -21,7 +21,22 @@ include "src/GameModes/vizsplash.z80" ; InvisibleUp splash screen
 include "src/GameModes/main.z80"      ; main game
 
 SECTION "main", ROM0
-; Interrupt handlers
+
+; This RGBSet Macro uses RGB values from 0 to 255. It then reduces the range
+; to 0-32. With a range 0-32, each color component is represented by 5 bits,
+; and a full 3-tuple color is represented by 15 bits. (aka 2 bytes)
+; Blue:  bits 14-10		(note that bit 15 is not used)
+; Green: bits 9-5
+; Red:   bits 4-0
+; Example: rgb_Set 255, 0, 0  ; RED
+rgb: MACRO
+	; DW (define-word) stores LSB then MSB in-memory
+	; meaning that passing rgb_Set a tuple of the form RRR, GGG, BBB
+	; will be stored in-rom as two successive bytes: %GGGRRRRR, %xBBBBBGG
+	; yet the 16-bit value (before writing to rom) is %xBBBBBGG %GGGRRRRR
+	; This is the exact order (LSB first) that the GBC expects in rBCPD
+	DW	((\3 >> 3) << 10) + ((\2 >> 3) << 5) + (\1 >> 3)
+	ENDM
 
 clearRAM:
    ; Clear RAM and VRAM
@@ -52,6 +67,9 @@ main:
     ; Set stack to top of WRAM
     ld sp, $DFFF
 
+    ; store console type
+    ldh [ConsoleType], a
+
     ; Set interrupts and timers
     xor a
     ldh [rIF], a
@@ -72,6 +90,72 @@ main:
     rlca
     rlca
     ld [rOBP1], a
+
+    ; set CGB palette
+.cgb_bg_set:
+    ld a, [ConsoleType]
+    cp a, $11
+    jp nz, .cgb_fg_done
+    ; autoincrement
+    ld a, %10000000
+    ldh [rBCPS], a
+    ld b, 8
+.cgb_bg_loop:
+    ; white
+    ld a, $FF
+    ldh [rBCPD], a
+    ldh [rBCPD], a
+    ; light grey
+    ld a, $94
+    ldh [rBCPD], a
+    ld a, $52
+    ldh [rBCPD], a
+    ; dark grey
+    ld a, $8C
+    ldh [rBCPD], a
+    ld a, $31
+    ldh [rBCPD], a
+    ; black
+    ld a, $00
+    ldh [rBCPD], a
+    ldh [rBCPD], a
+
+    ld a, b
+    sub a, 1
+    ld b, a
+    jp nz, .cgb_bg_loop
+.cgb_bg_done:
+
+.cgb_fg_set:
+    ; autoincrement
+    ld a, %10000000
+    ldh [rOCPS], a
+    ld b, 8
+.cgb_fg_loop:
+    ; white
+    ld a, $FF
+    ldh [rOCPD], a
+    ldh [rOCPD], a
+    ; light grey
+    ld a, $94
+    ldh [rOCPD], a
+    ld a, $52
+    ldh [rOCPD], a
+    ; dark grey
+    ld a, $8C
+    ldh [rOCPD], a
+    ld a, $31
+    ldh [rOCPD], a
+    ; black
+    ld a, $00
+    ldh [rOCPD], a
+    ldh [rOCPD], a
+
+    ld a, b
+    sub a, 1
+    ld b, a
+    jp nz, .cgb_fg_loop
+.cgb_fg_done:
   
     ; Clear RAM
     call clearRAM

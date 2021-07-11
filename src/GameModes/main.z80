@@ -164,8 +164,8 @@ GameLoop:
     call Game_LoadGFX
 
     ; Load music
-    ld hl, ryukenden
-    call hUGE_init
+    ;ld hl, ryukenden
+    ;call hUGE_init
     
     ; Init objects
     ld hl, SampleObject
@@ -218,7 +218,7 @@ GameLoop:
     call PrepareAllObjects
 
     ; Music tick
-    call _hUGE_dosound
+    ;call _hUGE_dosound
 
     ; Wait for VBlank before looping
     ; TODO: Create an exit condition
