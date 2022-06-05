@@ -6,7 +6,6 @@ SECTION "MATH",ROM0
 ;In:  Multiply H with E
 ;Out: HL = result
 ;Clobbers: d, b, l
-IF 1 == 2
 Mult8:
 	ld d,0
 	ld l,d
@@ -82,7 +81,6 @@ Mult32_NoAdd:
 	ld b,c
 	ld c,a
 	ret
-ENDC
 
 ; Negates the value of HL
 NegateHL: MACRO

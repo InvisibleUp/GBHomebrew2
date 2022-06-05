@@ -29,6 +29,7 @@ EnableLCD:
 
 InitDisplay:
 	ld a, LCDCF_ON | LCDCF_BGON | LCDCF_OBJON | \
-	      LCDCF_OBJ16 | LCDCF_BG8800 | LCDCF_BG9800
+	      LCDCF_OBJ16 | LCDCF_BG8800 | LCDCF_BG9800 | \
+	      LCDCF_WIN9C00
 	ld [rLCDC],a
 	ret

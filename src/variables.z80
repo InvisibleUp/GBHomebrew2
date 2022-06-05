@@ -34,10 +34,10 @@ LvlOrient:
 	DS 1 ; 0 = horiz, 1 = vert
 LvlLength:
 	DS 1 ; length in tiles of map along LvlOrient
-LvlCollision:
-	DS (LVL_MIN_WIDTH * LVL_MAX_HEIGHT)/2 ; 640 bytes
 LvlGfxMap:
 	DS LVL_MIN_WIDTH * LVL_MAX_HEIGHT ; 1280 bytes
+LvlCollision:
+	DS (LVL_MIN_WIDTH * LVL_MAX_HEIGHT)/2 ; 640 bytes
 
 SECTION "SpriteTable",WRAMX[$DF00]
 SpriteTable:
@@ -70,6 +70,8 @@ JumpStreak:
 JumpDone:
 	DS 1
 IsPaused:
+	DS 1
+StageNo:
 	DS 1
 
 ; player stuff

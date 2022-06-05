@@ -1,5 +1,67 @@
 SECTION "GM_MAIN",ROM0
 
+Game_LoadBG:
+    ld hl, bgmap_start
+    ld de, LvlOrient
+    ; lvlorient
+    ld a, [hl+]
+    ld [de], a
+    inc de
+    ; lvllen
+    ld a, [hl+]
+    ld [de], a
+    inc de
+    ; lvl buffer
+    ld bc, 20 * 16
+    call memcpy
+
+    ret
+
+; Copy one row from memory to the display (for vertical levels)
+; TODO: probably move this and related things into a new file
+; b: src row
+; c: dst row
+Game_BlitBG_Row:
+    ; set hl to src address
+    ld h, b
+    ld a, [LvlLength]
+    call Mult8
+    ld de, LvlGfxMap
+    add hl, de
+
+    ; set de to src address
+    push hl
+    ld hl, _SCRN0
+    sla e ; x2
+    sla e ; x4
+    sla e ; x8
+    sla e ; x16
+    sla e ; x32
+    ld d, 0
+    add hl, de
+    ld d, h
+    ld e, l
+    pop hl
+
+    ld bc, LVL_MIN_WIDTH
+    call memcpy
+    ret
+
+Game_BlitBG_Horiz:
+
+
+Game_LoadHUD:
+    ; make a super basic window tilemap
+    ld hl, _SCRN1
+    ld bc, $0400
+    ld a, $80
+    call memset ; AAAAAAAAA
+
+    ld a, 0
+    ldh [rWY], a
+    ld a, 7
+    ldh [rWX], a
+
 Game_LoadGFX:
     di
     WaitForVBlank
@@ -28,34 +90,7 @@ Game_LoadGFX:
     call memcpy
 
     ; Load background
-    ld de, bgmap_start
-    ld hl, _SCRN0
-    ld b, 18
-.bgLoop_Row:
-    ld c, 32
-.bgLoop_Column:
-    ld a, [de]
-    ld [hl+], a
-    dec c
-    jr nz, .bgLoop_Column
-
-    inc de
-    dec b
-    jr nz, .bgLoop_Row
-
-    ; make a super basic window tilemap
-    ld hl, _SCRN1
-    ld bc, $0400
-    ld a, $80
-    call memset ; AAAAAAAAA
-
-    ldh a, [rLCDC]
-    set LCDCB_WINADDR, a
-    ldh [rLCDC], a
-    ld a, 0
-    ldh [rWY], a
-    ld a, 7
-    ldh [rWX], a
+    call Game_LoadBG
 
     ; set interrupt for line whatever to turn window off
     ld a, 16
@@ -196,6 +231,10 @@ GameLoop:
     ldh a, [WindowY]
     ldh [rLYC], a
 
+    ; redraw background
+    call Game_BlitBG_Horiz
+
+.loop_noncrit:
     ; Tick global timer
     ldh a, [GlobalTimer]
     inc a

@@ -205,10 +205,6 @@ bg_grass_dirt:
     dgfx`'00000000
 bg_end:
 
-bgmap_start:
-    db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,1
-bgmap_end:
-
 font:
     incbin "gfx/bin/8x8letters.png.bin"
     incbin "gfx/bin/8x8numbers.png.bin"

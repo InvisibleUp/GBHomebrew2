@@ -13,6 +13,7 @@ include "src/math.z80"       ; Math macros & routines
 
 ; Engine stuff
 include "src/gfxinclude.z80" ; Graphics data
+include "src/mapinclude.z80" ; Tilemap data
 include "src/sprites.z80"    ; Sprite routines
 include "src/objects.z80"    ; Object/AI routines
 
